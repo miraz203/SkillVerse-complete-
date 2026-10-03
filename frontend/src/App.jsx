@@ -1111,8 +1111,12 @@ function App() {
   const [customPhotoUrl, setCustomPhotoUrl] = useState('');
 
   // Schedule slot state
-  const [bookingDate, setBookingDate] = useState('Tomorrow');
-  const [bookingCustomDate, setBookingCustomDate] = useState('');
+  const getDefaultBookingDate = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+  };
+  const [bookingDate, setBookingDate] = useState(getDefaultBookingDate);
   const [bookingTimeSlot, setBookingTimeSlot] = useState('10:00 AM - 12:00 PM');
   const [bookedSlotsForWorker, setBookedSlotsForWorker] = useState([]);
   const [loadingBookedSlots, setLoadingBookedSlots] = useState(false);
@@ -1960,11 +1964,10 @@ function App() {
     if (options.description) {
       setBookingDesc(options.description);
     }
-    const initDate = options.preferredDate || 'Tomorrow';
+    const initDate = options.preferredDate || getDefaultBookingDate();
     const initTime = options.preferredTime || '10:00 AM - 12:00 PM';
     setBookingDate(initDate);
     setBookingTimeSlot(initTime);
-    setBookingCustomDate('');
 
     if (options.propertyAddress) {
       setBookingAddress(options.propertyAddress);
@@ -1983,7 +1986,7 @@ function App() {
   // Create service order booking
   const handleCreateBooking = async () => {
     if (!selectedWorker) return;
-    const effectiveDate = bookingDate === 'Custom Date' && bookingCustomDate ? bookingCustomDate : bookingDate;
+    const effectiveDate = bookingDate || getDefaultBookingDate();
     
     // Check if worker is busy in that slot
     if (bookedSlotsForWorker.includes(bookingTimeSlot)) {
@@ -2037,8 +2040,7 @@ function App() {
         setBookingAddress('');
         setSelectedPhotoPreset(null);
         setCustomPhotoUrl('');
-        setBookingDate('Tomorrow');
-        setBookingCustomDate('');
+        setBookingDate(getDefaultBookingDate());
         setBookingTimeSlot('10:00 AM - 12:00 PM');
         fetchCustomerBookings();
         showToast(
@@ -3802,26 +3804,39 @@ function App() {
         );
       })()}
 
-      {/* --- UPGRADED BOOKING CONFIRMATION MODAL (NO SCROLLING, FIXED 2-COLUMN WIDE LAYOUT) --- */}
+      {/* --- UPGRADED BOOKING CONFIRMATION MODAL (NO SCROLLING, SINGLE FRAME SIDEWAYS LAYOUT) --- */}
       {selectedWorker && (
         <div className="modal-overlay" onClick={(e) => e.target.className.includes('modal-overlay') && setSelectedWorker(null)}>
-          <div className="modal-content modal-content-wide" style={{ maxWidth: '860px', width: '92vw', padding: '1.3rem 1.6rem', maxHeight: '92vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-            {/* Top Bar Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.7rem', marginBottom: '0.9rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+          <div
+            className="modal-content"
+            style={{
+              maxWidth: '880px',
+              width: '92vw',
+              padding: '1.2rem 1.4rem',
+              maxHeight: '94vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* 1. Top Bar Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.6rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <img 
                   src={selectedWorker.user?.profilePicture || selectedWorker.profilePicture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'} 
                   alt={selectedWorker.user?.name || selectedWorker.name || 'Technician'} 
-                  style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary)' }} 
+                  style={{ width: 42, height: 42, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary)' }} 
                 />
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <h2 style={{ fontSize: '1.2rem', margin: 0, fontWeight: 700 }}>Book {selectedWorker.user?.name || selectedWorker.name || 'Technician'}</h2>
-                    <span className="badge badge-verified" style={{ fontSize: '0.7rem', padding: '0.15rem 0.45rem' }}>
-                      <ShieldCheck size={12} /> {selectedWorker.careerLevel || 'Master'} Rank
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                    <h2 style={{ fontSize: '1.15rem', margin: 0, fontWeight: 700 }}>Book {selectedWorker.user?.name || selectedWorker.name || 'Technician'}</h2>
+                    <span className="badge badge-verified" style={{ fontSize: '0.68rem', padding: '0.12rem 0.45rem' }}>
+                      <ShieldCheck size={11} /> {selectedWorker.careerLevel || 'Master'} Rank
                     </span>
                   </div>
-                  <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                  <span style={{ fontSize: '0.73rem', color: 'var(--text-muted)' }}>
                     ⭐ {selectedWorker.user?.rating || 4.9} • {selectedWorker.experienceYears || 5}+ yrs exp • {selectedWorker.serviceArea || selectedWorker.user?.address || 'Dhaka Area'}
                   </span>
                 </div>
@@ -3838,394 +3853,240 @@ function App() {
                 }}
                 style={{ background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', padding: '0.35rem', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex' }}
               >
-                <XCircle size={20} />
+                <XCircle size={19} />
               </button>
             </div>
 
-            {/* 2-Column Grid Layout */}
-            <div className="modal-two-col">
-              {/* Left Column: Pricing breakdown, Category, Custom offer, Location */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {/* Advance & VAT Breakdown Pill */}
-                <div style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.08), rgba(59,130,246,0.06))', border: '1px solid rgba(16,185,129,0.25)', borderRadius: '10px', padding: '0.7rem 0.9rem', fontSize: '0.8rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Technician Base Advance:</span>
-                    <strong style={{ color: 'var(--text-primary)' }}>৳{selectedWorker.basePrice || 300}</strong>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem', color: 'var(--text-muted)' }}>
-                    <span>Platform VAT (5%):</span>
-                    <span>+৳{(((selectedWorker.basePrice || 300) * 0.05)).toFixed(1)}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '0.3rem', color: 'var(--primary)', fontWeight: 'bold' }}>
-                    <span>Total Advance Payable:</span>
-                    <span style={{ fontSize: '0.92rem' }}>৳{(((selectedWorker.basePrice || 300) * 1.05)).toFixed(1)}</span>
-                  </div>
-                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '0.25rem', fontStyle: 'italic' }}>
-                    🛡️ Advance is paid upon worker confirmation. 1hr/km dispatch protection with instant refund if delayed.
-                  </div>
+            {/* 2. Top Advance & Pricing Strip */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr 1fr', gap: '0.6rem', background: 'linear-gradient(135deg, rgba(16,185,129,0.08), rgba(59,130,246,0.06))', border: '1px solid rgba(16,185,129,0.25)', borderRadius: '10px', padding: '0.55rem 0.8rem', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                  Advance: <strong style={{ color: 'var(--text-primary)' }}>৳{selectedWorker.basePrice || 300}</strong> + 5% VAT (৳{(((selectedWorker.basePrice || 300) * 0.05)).toFixed(1)})
                 </div>
-
-                {/* Category & Suggested Cost */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.5rem' }}>
-                  <div>
-                    <label className="form-label" style={{ fontSize: '0.74rem', marginBottom: '0.2rem' }}>Service Category</label>
-                    <input className="form-input" style={{ fontSize: '0.8rem', padding: '0.35rem 0.55rem' }} value={(selectedWorker.skills || '').split(',')[0]?.trim() || 'General Service'} readOnly />
-                  </div>
-                  <div>
-                    <label className="form-label" style={{ fontSize: '0.74rem', marginBottom: '0.2rem' }}>Suggested Cost</label>
-                    <input className="form-input" style={{ fontSize: '0.8rem', padding: '0.35rem 0.55rem', fontWeight: 600, color: 'var(--primary)' }} value={`৳ ${bookingCost}`} readOnly />
-                  </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--primary)', fontWeight: 'bold' }}>
+                  Total Advance: ৳{(((selectedWorker.basePrice || 300) * 1.05)).toFixed(1)} <span style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>(Paid on confirmation)</span>
                 </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Category & Est. Cost</div>
+                <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-heading)' }}>
+                  {(selectedWorker.skills || '').split(',')[0]?.trim() || 'General'} • <span style={{ color: 'var(--primary)' }}>৳{bookingCost}</span>
+                </div>
+              </div>
+              <div>
+                <input
+                  type="number"
+                  className="form-input"
+                  style={{ fontSize: '0.76rem', padding: '0.3rem 0.5rem' }}
+                  placeholder="Your Offer (Optional ৳)"
+                  value={offeredPrice}
+                  onChange={e => setOfferedPrice(e.target.value)}
+                />
+              </div>
+            </div>
 
-                {/* Offer Price Input */}
-                <div>
-                  <label className="form-label" style={{ fontSize: '0.74rem', marginBottom: '0.2rem', display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Your Offer Price (Optional BDT)</span>
-                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Technician may counter</span>
+            {/* 3. SIDE-BY-SIDE MAIN SECTION: [LEFT: Schedule & Time Slot] vs [RIGHT: Service Location & Problem Info] */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.05fr 1fr', gap: '0.9rem', alignItems: 'start' }}>
+              
+              {/* LEFT COLUMN: Date Picker & Time Slots */}
+              <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '0.65rem 0.8rem', display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label className="form-label" style={{ fontSize: '0.74rem', margin: 0, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Calendar size={13} color="var(--primary)" /> Preferred Date & Time Slot
                   </label>
+                  <span style={{ fontSize: '0.65rem', color: bookedSlotsForWorker.length > 0 ? '#ef4444' : '#10b981', fontWeight: 600 }}>
+                    {loadingBookedSlots ? 'Checking...' : bookedSlotsForWorker.length > 0 ? `⚠️ ${bookedSlotsForWorker.length} slot(s) busy` : '✓ Slots Available'}
+                  </span>
+                </div>
+
+                {/* Date Select Input Only (No Today/Tomorrow chips) */}
+                <div>
                   <input
-                    type="number"
+                    type="date"
                     className="form-input"
-                    style={{ fontSize: '0.8rem', padding: '0.35rem 0.55rem' }}
-                    placeholder={`e.g. ${bookingCost}`}
-                    value={offeredPrice}
-                    onChange={e => setOfferedPrice(e.target.value)}
+                    style={{ fontSize: '0.78rem', padding: '0.32rem 0.55rem', width: '100%' }}
+                    min={new Date().toISOString().split('T')[0]}
+                    value={bookingDate}
+                    onChange={e => {
+                      setBookingDate(e.target.value);
+                      const wId = selectedWorker.user?.id || selectedWorker.id;
+                      fetchBookedSlots(wId, e.target.value);
+                    }}
+                    required
                   />
                 </div>
 
-                {/* --- SCHEDULE: DATE & TIME SLOT SELECTION --- */}
-                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '0.65rem 0.8rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <label className="form-label" style={{ fontSize: '0.74rem', margin: 0, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                      <Calendar size={13} color="var(--primary)" /> Preferred Date & Time Slot
-                    </label>
-                    {loadingBookedSlots && (
-                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Checking slots...</span>
-                    )}
-                  </div>
+                {/* Time Slots 2-Column Compact Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.3rem' }}>
+                  {[
+                    '08:00 AM - 10:00 AM',
+                    '10:00 AM - 12:00 PM',
+                    '12:00 PM - 02:00 PM',
+                    '02:00 PM - 04:00 PM',
+                    '04:00 PM - 06:00 PM',
+                    '06:00 PM - 08:00 PM',
+                    '08:00 PM - 10:00 PM'
+                  ].map(slot => {
+                    const isBooked = bookedSlotsForWorker.includes(slot);
+                    const isSelected = bookingTimeSlot === slot;
 
-                  {/* Date Chips */}
-                  <div>
-                    <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
-                      {['Today', 'Tomorrow', 'In 2 Days', 'Custom Date'].map(dOpt => (
-                        <button
-                          key={dOpt}
-                          type="button"
-                          className={`btn ${bookingDate === dOpt ? 'btn-primary' : 'btn-secondary'}`}
-                          style={{ fontSize: '0.68rem', padding: '0.2rem 0.5rem' }}
-                          onClick={() => {
-                            setBookingDate(dOpt);
-                            const wId = selectedWorker.user?.id || selectedWorker.id;
-                            fetchBookedSlots(wId, dOpt === 'Custom Date' && bookingCustomDate ? bookingCustomDate : dOpt);
-                          }}
-                        >
-                          {dOpt}
-                        </button>
-                      ))}
-                    </div>
-
-                    {bookingDate === 'Custom Date' && (
-                      <input
-                        type="date"
-                        className="form-input"
-                        style={{ fontSize: '0.76rem', padding: '0.25rem 0.5rem', marginTop: '0.2rem' }}
-                        min={new Date().toISOString().split('T')[0]}
-                        value={bookingCustomDate}
-                        onChange={e => {
-                          setBookingCustomDate(e.target.value);
-                          const wId = selectedWorker.user?.id || selectedWorker.id;
-                          fetchBookedSlots(wId, e.target.value);
-                        }}
-                        required
-                      />
-                    )}
-                  </div>
-
-                  {/* Time Slots Grid */}
-                  <div>
-                    <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', marginBottom: '0.25rem', display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Select Slot:</span>
-                      <span style={{ fontSize: '0.65rem', color: bookedSlotsForWorker.length > 0 ? '#ef4444' : '#10b981', fontWeight: 600 }}>
-                        {bookedSlotsForWorker.length > 0 ? `⚠️ ${bookedSlotsForWorker.length} slot(s) busy` : '✓ All slots available'}
-                      </span>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem' }}>
-                      {[
-                        '08:00 AM - 10:00 AM',
-                        '10:00 AM - 12:00 PM',
-                        '12:00 PM - 02:00 PM',
-                        '02:00 PM - 04:00 PM',
-                        '04:00 PM - 06:00 PM',
-                        '06:00 PM - 08:00 PM',
-                        '08:00 PM - 10:00 PM'
-                      ].map(slot => {
-                        const isBooked = bookedSlotsForWorker.includes(slot);
-                        const isSelected = bookingTimeSlot === slot;
-
-                        return (
-                          <button
-                            key={slot}
-                            type="button"
-                            disabled={isBooked}
-                            onClick={() => setBookingTimeSlot(slot)}
-                            style={{
-                              padding: '0.35rem 0.4rem',
-                              borderRadius: '6px',
-                              border: isSelected
-                                ? '2px solid var(--primary)'
-                                : isBooked
-                                ? '1px dashed rgba(239, 68, 68, 0.4)'
-                                : '1px solid var(--border-color)',
-                              background: isSelected
-                                ? 'rgba(59, 130, 246, 0.15)'
-                                : isBooked
-                                ? 'rgba(239, 68, 68, 0.08)'
-                                : 'var(--bg-card)',
-                              color: isBooked ? '#ef4444' : isSelected ? 'var(--primary)' : 'var(--text-primary)',
-                              fontSize: '0.7rem',
-                              cursor: isBooked ? 'not-allowed' : 'pointer',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              opacity: isBooked ? 0.65 : 1,
-                              transition: 'all 0.12s ease'
-                            }}
-                          >
-                            <span style={{ fontWeight: isSelected ? 700 : 500 }}>{slot}</span>
-                            {isBooked && (
-                              <span style={{ fontSize: '0.6rem', color: '#ef4444', fontWeight: 700 }}>Busy / Booked 🚫</span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Service Location Selector */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <label className="form-label" style={{ fontSize: '0.74rem', margin: 0 }}>Service Location</label>
-                    <div style={{ display: 'flex', gap: '0.3rem' }}>
+                    return (
                       <button
+                        key={slot}
                         type="button"
-                        className={`btn ${locationMode === 'gps' ? 'btn-primary' : 'btn-secondary'}`}
-                        style={{ fontSize: '0.68rem', padding: '0.15rem 0.45rem' }}
-                        onClick={() => {
-                          setLocationMode('gps');
-                          handleFetchGpsLocation();
+                        disabled={isBooked}
+                        onClick={() => setBookingTimeSlot(slot)}
+                        style={{
+                          padding: '0.32rem 0.4rem',
+                          borderRadius: '6px',
+                          border: isSelected
+                            ? '2px solid var(--primary)'
+                            : isBooked
+                            ? '1px dashed rgba(239, 68, 68, 0.4)'
+                            : '1px solid var(--border-color)',
+                          background: isSelected
+                            ? 'rgba(59, 130, 246, 0.15)'
+                            : isBooked
+                            ? 'rgba(239, 68, 68, 0.08)'
+                            : 'var(--bg-card)',
+                          color: isBooked ? '#ef4444' : isSelected ? 'var(--primary)' : 'var(--text-primary)',
+                          fontSize: '0.68rem',
+                          cursor: isBooked ? 'not-allowed' : 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          opacity: isBooked ? 0.65 : 1,
+                          transition: 'all 0.12s ease'
                         }}
                       >
-                        <Navigation size={11} /> Share GPS
+                        <span style={{ fontWeight: isSelected ? 700 : 500 }}>{slot}</span>
+                        {isBooked ? (
+                          <span style={{ fontSize: '0.6rem', color: '#ef4444', fontWeight: 700 }}>Busy 🚫</span>
+                        ) : isSelected ? (
+                          <span style={{ fontSize: '0.62rem', color: 'var(--primary)', fontWeight: 700 }}>✓</span>
+                        ) : null}
                       </button>
-                      <button
-                        type="button"
-                        className={`btn ${locationMode === 'manual' ? 'btn-primary' : 'btn-secondary'}`}
-                        style={{ fontSize: '0.68rem', padding: '0.15rem 0.45rem' }}
-                        onClick={() => setLocationMode('manual')}
-                      >
-                        Manual Address
-                      </button>
-                    </div>
-                  </div>
-
-                  {locationMode === 'gps' ? (
-                    <div style={{ background: 'rgba(16, 185, 129, 0.06)', padding: '0.45rem 0.65rem', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                          <MapPin size={13} color="var(--primary)" />
-                          <span style={{ fontSize: '0.74rem', fontWeight: 'bold', color: 'var(--primary)' }}>
-                            {isGpsLoading ? 'Detecting Live GPS...' : 'GPS Live Location'}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          style={{ fontSize: '0.65rem', padding: '0.1rem 0.35rem', display: 'flex', alignItems: 'center', gap: '3px' }}
-                          onClick={handleFetchGpsLocation}
-                          disabled={isGpsLoading}
-                        >
-                          <Navigation size={10} /> {isGpsLoading ? 'Detecting...' : 'Refresh GPS'}
-                        </button>
-                      </div>
-                      <input
-                        type="text"
-                        className="form-input"
-                        style={{ fontSize: '0.76rem', padding: '0.3rem 0.5rem' }}
-                        placeholder="Detecting your current location..."
-                        value={bookingAddress}
-                        onChange={(e) => setBookingAddress(e.target.value)}
-                      />
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                      {addresses.length > 0 && (
-                        <select
-                          className="form-select"
-                          style={{ fontSize: '0.76rem', padding: '0.3rem 0.5rem' }}
-                          value={bookingAddress}
-                          onChange={(e) => setBookingAddress(e.target.value)}
-                        >
-                          <option value="">-- Choose Saved Address --</option>
-                          {addresses.map(a => (
-                            <option key={a.id} value={a.address || a.fullAddress}>
-                              {a.label} ({a.type}) - {a.address || a.fullAddress}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                      <div style={{ display: 'flex', gap: '0.3rem' }}>
-                        <input
-                          type="text"
-                          className="form-input"
-                          style={{ fontSize: '0.76rem', padding: '0.3rem 0.5rem', flex: 1 }}
-                          placeholder="House, Road, Area, Landmark (e.g. House 14, Road 4, Uttara)"
-                          value={bookingAddress}
-                          onChange={(e) => setBookingAddress(e.target.value)}
-                          required
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-secondary"
-                          style={{ fontSize: '0.68rem', padding: '0.3rem 0.5rem', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '3px' }}
-                          title="Auto-detect current location"
-                          onClick={handleFetchGpsLocation}
-                          disabled={isGpsLoading}
-                        >
-                          <MapPin size={11} color="var(--primary)" /> {isGpsLoading ? '...' : 'Live GPS'}
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Right Column: Problem Description & Photo Attachment */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {/* RIGHT COLUMN: Service Location & Problem Details */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                
+                {/* Service Location Box */}
+                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '0.6rem 0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <label className="form-label" style={{ fontSize: '0.72rem', margin: 0, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <MapPin size={12} color="var(--primary)" /> Service Location
+                    </label>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      style={{ fontSize: '0.65rem', padding: '0.12rem 0.4rem', display: 'flex', alignItems: 'center', gap: '3px' }}
+                      onClick={handleFetchGpsLocation}
+                      disabled={isGpsLoading}
+                    >
+                      <Navigation size={10} className={isGpsLoading ? 'animate-spin' : ''} />
+                      {isGpsLoading ? 'GPS...' : 'Live GPS'}
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.3rem' }}>
+                    {addresses.length > 0 && (
+                      <select
+                        className="form-select"
+                        style={{ fontSize: '0.74rem', padding: '0.28rem 0.45rem', maxWidth: '130px' }}
+                        value={bookingAddress}
+                        onChange={(e) => setBookingAddress(e.target.value)}
+                      >
+                        <option value="">Saved...</option>
+                        {addresses.map(a => (
+                          <option key={a.id} value={a.address || a.fullAddress}>
+                            {a.label} ({a.type})
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    <input
+                      type="text"
+                      className="form-input"
+                      style={{ fontSize: '0.75rem', padding: '0.28rem 0.45rem', flex: 1 }}
+                      placeholder="House, Road, Area, Landmark (e.g. Uttara, Dhaka)"
+                      value={bookingAddress}
+                      onChange={(e) => setBookingAddress(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
                 {/* Describe Problem */}
                 <div>
-                  <label className="form-label" style={{ fontSize: '0.74rem', marginBottom: '0.2rem' }}>Describe the Problem</label>
+                  <label className="form-label" style={{ fontSize: '0.72rem', marginBottom: '0.2rem' }}>Describe the Problem</label>
                   <textarea
                     className="form-textarea"
-                    rows="3"
-                    style={{ fontSize: '0.8rem', padding: '0.4rem 0.55rem', resize: 'none' }}
+                    rows="2"
+                    style={{ fontSize: '0.76rem', padding: '0.3rem 0.5rem', resize: 'none' }}
                     placeholder="Describe issue (e.g. AC cooling gas leak, water dripping, strange noise)"
                     value={bookingDesc}
                     onChange={(e) => setBookingDesc(e.target.value)}
                   />
                 </div>
 
-                {/* Diagnostic Photo Section */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <label className="form-label" style={{ fontSize: '0.74rem', margin: 0 }}>Diagnostic Photo (Optional)</label>
-                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Helps technician prepare</span>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
-                      <label className="btn btn-secondary" style={{ fontSize: '0.72rem', padding: '0.35rem 0.5rem', justifyContent: 'center', cursor: 'pointer' }}>
-                        <Camera size={13} /> Upload Image
-                        <input
-                          type="file"
-                          accept="image/*"
-                          style={{ display: 'none' }}
-                          onChange={e => {
-                            const file = e.target.files[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onloadend = () => {
-                                setCustomPhotoUrl(reader.result);
-                                setSelectedPhotoPreset(null);
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                        />
-                      </label>
-
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        style={{ fontSize: '0.72rem', padding: '0.35rem 0.5rem', justifyContent: 'center', borderColor: 'rgba(59, 130, 246, 0.35)', color: '#60a5fa' }}
-                        onClick={() => {
-                          setCustomPhotoUrl("https://images.unsplash.com/photo-1581094288338-2314dddb7ecc?w=600");
-                          setSelectedPhotoPreset(null);
-                        }}
-                      >
-                        💡 Use Demo Photo
-                      </button>
-                    </div>
-
+                {/* Diagnostic Photo (Compact) */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  <label className="btn btn-secondary" style={{ fontSize: '0.68rem', padding: '0.22rem 0.45rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Camera size={11} /> Photo
                     <input
-                      type="text"
-                      className="form-input"
-                      style={{ fontSize: '0.76rem', padding: '0.3rem 0.5rem' }}
-                      placeholder="Or paste image URL (https://...)"
-                      value={customPhotoUrl?.startsWith('data:') ? '' : (customPhotoUrl || '')}
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
                       onChange={e => {
-                        setCustomPhotoUrl(e.target.value);
-                        setSelectedPhotoPreset(null);
+                        const file = e.target.files[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setCustomPhotoUrl(reader.result);
+                            setSelectedPhotoPreset(null);
+                          };
+                          reader.readAsDataURL(file);
+                        }
                       }}
                     />
+                  </label>
 
-                    {/* Presets */}
-                    <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Presets:</span>
-                      {[
-                        { label: 'AC Unit', url: 'https://images.unsplash.com/photo-1581094288338-2314dddb7ecc?w=600' },
-                        { label: 'Electrical', url: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600' },
-                        { label: 'Plumbing', url: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=600' },
-                        { label: 'Appliance', url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600' }
-                      ].map((preset, pIdx) => (
-                        <button
-                          key={pIdx}
-                          type="button"
-                          className="badge"
-                          style={{
-                            background: customPhotoUrl === preset.url ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
-                            color: customPhotoUrl === preset.url ? '#000000' : 'var(--text-secondary)',
-                            border: '1px solid var(--border-color)',
-                            cursor: 'pointer',
-                            fontSize: '0.68rem',
-                            padding: '0.15rem 0.4rem'
-                          }}
-                          onClick={() => {
-                            setCustomPhotoUrl(preset.url);
-                            setSelectedPhotoPreset(null);
-                          }}
-                        >
-                          {preset.label}
-                        </button>
-                      ))}
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ fontSize: '0.68rem', padding: '0.22rem 0.45rem', color: '#60a5fa', borderColor: 'rgba(59, 130, 246, 0.35)' }}
+                    onClick={() => {
+                      setCustomPhotoUrl("https://images.unsplash.com/photo-1581094288338-2314dddb7ecc?w=600");
+                      setSelectedPhotoPreset(null);
+                    }}
+                  >
+                    💡 Demo Photo
+                  </button>
+
+                  {customPhotoUrl && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(16, 185, 129, 0.1)', padding: '0.15rem 0.4rem', borderRadius: '4px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                      <img src={customPhotoUrl} alt="Preview" style={{ width: '24px', height: '18px', objectFit: 'cover', borderRadius: '2px' }} />
+                      <span style={{ fontSize: '0.68rem', color: 'var(--primary)', fontWeight: 600 }}>Attached</span>
+                      <button type="button" className="btn-icon" style={{ padding: 0 }} onClick={() => setCustomPhotoUrl('')}>
+                        <Trash2 size={11} color="var(--accent-rose)" />
+                      </button>
                     </div>
-
-                    {/* Photo Preview */}
-                    {customPhotoUrl && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', background: 'rgba(255,255,255,0.03)', padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
-                        <img src={customPhotoUrl} alt="Preview" style={{ width: '56px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
-                        <div style={{ flex: 1 }}>
-                          <span style={{ fontSize: '0.74rem', color: 'var(--primary)', fontWeight: 'bold', display: 'block' }}>✔ Photo Attached</span>
-                          <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Shared with technician for diagnosis</span>
-                        </div>
-                        <button type="button" className="btn-icon" onClick={() => setCustomPhotoUrl('')}>
-                          <Trash2 size={13} color="var(--accent-rose)" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
+
               </div>
             </div>
 
-            {/* Footer Buttons */}
-            <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '0.8rem', marginTop: '0.9rem' }}>
+            {/* 4. Footer Buttons */}
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', borderTop: '1px solid var(--border-color)', paddingTop: '0.6rem' }}>
               <button 
                 type="button"
                 className="btn btn-secondary" 
-                style={{ padding: '0.45rem 1rem', fontSize: '0.82rem' }}
+                style={{ padding: '0.4rem 0.9rem', fontSize: '0.8rem' }}
                 onClick={() => {
                   setSelectedWorker(null);
                   setOfferedPrice('');
@@ -4240,7 +4101,7 @@ function App() {
               <button 
                 type="button"
                 className="btn btn-primary" 
-                style={{ padding: '0.45rem 1.3rem', fontSize: '0.82rem', fontWeight: 600 }}
+                style={{ padding: '0.4rem 1.2rem', fontSize: '0.8rem', fontWeight: 600 }}
                 onClick={handleCreateBooking}
               >
                 Confirm & Dispatch →
