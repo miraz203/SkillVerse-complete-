@@ -407,6 +407,26 @@ a {
   padding: 2rem;
 }
 
+/* Customer Find Services Technician Cards Grid - 3 columns for 2 full complete rows */
+.technician-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  .technician-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .technician-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Cost Estimation widget */
 .ai-widget {
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);

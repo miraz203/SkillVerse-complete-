@@ -463,3 +463,9 @@ SELECT COALESCE(MAX(id), 0) FROM service_bookings [42102-224]
 2026-10-03 02:15:53.066115+06:00 jdbc[24]: exception
 org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "SERVICE_BOOKINGS" not found; SQL statement:
 SELECT COALESCE(MAX(id), 0) FROM service_bookings [42102-224]
+2026-10-03 02:38:21.488185+06:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "SERVICE_BOOKINGS" not found; SQL statement:
+SELECT COALESCE(MAX(id), 0) FROM service_bookings [42102-224]
+2026-10-03 09:15:53.241153+06:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "SERVICE_BOOKINGS" not found; SQL statement:
+SELECT COALESCE(MAX(id), 0) FROM service_bookings [42102-224]

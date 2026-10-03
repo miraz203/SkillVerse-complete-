@@ -3266,8 +3266,8 @@ function App() {
                           </div>
                         )}
 
-                        {/* Filtered Technician Cards Grid with 2-Row Maximum & Load More */}
-                        <div className="dashboard-grid" style={{ padding: 0, marginBottom: '1.5rem' }}>
+                        {/* Filtered Technician Cards Grid with 2 Complete Rows (3 columns x 2 rows) & Load More */}
+                        <div className="technician-cards-grid">
                           {displayedWorkers.map(w => {
                             const isSaved = (savedWorkerIds || []).map(Number).includes(Number(w.id));
                             const wLat = w.latitude || w.user?.latitude || 23.8720;
